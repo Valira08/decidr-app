@@ -1,14 +1,172 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DECIDR – Deine Entscheidungshilfe</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1a73e8">
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1a73e8" />
+  <style>
+    body { font-family: Arial, sans-serif; background: #f5f7fa; margin: 0; padding: 0; color: #333; }
+    header { background: #1a73e8; color: white; padding: 2rem; text-align: center; }
+    header h1 { margin: 0; font-size: 2.5rem; }
+    main { max-width: 800px; margin: 2rem auto; padding: 1rem; background: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+    .step { margin-bottom: 2rem; }
+    .step h2 { color: #1a73e8; }
+    .step textarea { width: 100%; min-height: 80px; margin-top: 0.5rem; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; font-size: 1rem; }
+    .submit-button, .view-button {
+      display: block; margin: 2rem auto 1rem; padding: 1rem 2rem;
+      font-size: 1.2rem; background-color: #1a73e8; color: white;
+      border: none; border-radius: 5px; cursor: pointer;
+    }
+    .decision-entry { background: #eef3fb; margin: 1rem auto; padding: 1rem; border-radius: 5px; font-size: 0.9rem; }
+    .export-button { margin-top: 0.5rem; background-color: #34a853; }
+    footer { text-align: center; padding: 1rem; color: #777; }
+  </style>
 </head>
 <body>
-  <h1>DECIDR – GitHub ZIP wird erstellt...</h1>
+  <header>
+    <h1>DECIDR – Deine Entscheidungshilfe</h1>
+    <p>Strukturiert denken. Klar entscheiden. Bewusst leben.</p>
+  </header>
+  <div style="text-align:center; margin-top: 1rem;">
+    <span id="user-info" style="font-weight:bold;"></span><br>
+    <button id="login-btn" onclick="showLogin()" class="view-button" style="background:#4285f4;">Login</button>
+    <button id="logout-btn" onclick="logout()" class="view-button" style="background:#db4437; display:none;">Logout</button>
+  </div>
+  <main>
+    <form id="decision-form">
+      <section class="step"><h2>1. Was willst du entscheiden?</h2><textarea name="frage" placeholder="Formuliere deine Entscheidung oder Frage..."></textarea></section>
+      <section class="step"><h2>2. Welche Faktoren beeinflussen deine Entscheidung?</h2><textarea name="faktoren" placeholder="z. B. Zeit, Geld, Werte, Beziehungen..."></textarea></section>
+      <section class="step"><h2>3. Was sind deine Optionen?</h2><textarea name="optionen" placeholder="Liste deine Optionen..."></textarea></section>
+      <section class="step"><h2>4. Was sind die Konsequenzen und wie wahrscheinlich sind sie?</h2><textarea name="konsequenzen" placeholder="Bewerte die Konsequenzen und Wahrscheinlichkeiten..."></textarea></section>
+      <section class="step"><h2>5. Welche ethischen Werte sind dir wichtig?</h2><textarea name="werte" placeholder="Welche Werte spielen eine Rolle?"></textarea></section>
+      <section class="step"><h2>6. Was entscheidest du – und warum?</h2><textarea name="entscheidung" placeholder="Treffe deine Entscheidung und begründe sie..."></textarea></section>
+      <section class="step"><h2>7. Rückblick & Feedback</h2><textarea name="feedback" placeholder="Wie fühlst du dich mit deiner Entscheidung?"></textarea></section>
+      <button type="submit" class="submit-button">Entscheidung speichern</button>
+    </form>
+    <button class="view-button" onclick="showDecisions()">Gespeicherte Entscheidungen anzeigen</button>
+    <div id="saved-decisions"></div>
+  </main>
+  <footer><p>&copy; 2025 DECIDR. Entwickelt mit Klarheit und KI-Unterstützung.</p></footer>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAt_inBKM7WueWno3BeWOhvoXhNEUw5vYg",
+      authDomain: "decidr-93b91.firebaseapp.com",
+      projectId: "decidr-93b91",
+      storageBucket: "decidr-93b91.appspot.com",
+      messagingSenderId: "832142874881",
+      appId: "1:832142874881:web:ebe2e5240c2a57f4fb2300"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    function showLogin() {
+      const email = prompt("Deine E-Mail:");
+      const password = prompt("Passwort eingeben oder erstellen:");
+      auth.signInWithEmailAndPassword(email, password)
+        .then(user => alert("Angemeldet als: " + user.user.email))
+        .catch(error => {
+          if (error.code === 'auth/user-not-found') {
+            auth.createUserWithEmailAndPassword(email, password)
+              .then(user => alert("Neuer Account erstellt: " + user.user.email))
+              .catch(err => alert("Fehler: " + err.message));
+          } else {
+            alert("Fehler: " + error.message);
+          }
+        });
+    }
+
+    function logout() {
+      auth.signOut().then(() => alert("Abgemeldet."));
+    }
+
+    auth.onAuthStateChanged(user => {
+      const loginBtn = document.getElementById("login-btn");
+      const logoutBtn = document.getElementById("logout-btn");
+      const userInfo = document.getElementById("user-info");
+      if (user) {
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = 'inline-block';
+        userInfo.textContent = `Angemeldet als: ${user.email}`;
+      } else {
+        loginBtn.style.display = 'inline-block';
+        logoutBtn.style.display = 'none';
+        userInfo.textContent = '';
+      }
+    });
+
+    document.getElementById('decision-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const data = new FormData(e.target);
+      const entries = {};
+      for (const [key, value] of data.entries()) {
+        entries[key] = value;
+      }
+      localStorage.setItem('entscheidung_' + Date.now(), JSON.stringify(entries));
+      alert('Deine Entscheidung wurde gespeichert!');
+      e.target.reset();
+    });
+
+    function showDecisions() {
+      const container = document.getElementById('saved-decisions');
+      container.innerHTML = '';
+      const keys = Object.keys(localStorage).filter(k => k.startsWith('entscheidung_'));
+      keys.sort().reverse();
+      if (keys.length === 0) {
+        container.innerHTML = '<p>Keine gespeicherten Entscheidungen gefunden.</p>';
+        return;
+      }
+      keys.forEach(k => {
+        const data = JSON.parse(localStorage.getItem(k));
+        const div = document.createElement('div');
+        div.className = 'decision-entry';
+        div.innerHTML = '<strong>Frage:</strong> ' + (data.frage || '-') + '<br>' +
+                        '<strong>Entscheidung:</strong> ' + (data.entscheidung || '-') + '<br>' +
+                        '<strong>Feedback:</strong> ' + (data.feedback || '-') + '<br>' +
+                        '<em>Gespeichert am:</em> ' + new Date(parseInt(k.split('_')[1])).toLocaleString();
+
+        const exportBtn = document.createElement('button');
+        exportBtn.className = 'submit-button export-button';
+        exportBtn.textContent = 'Exportieren';
+        exportBtn.onclick = () => exportDecision(data);
+        div.appendChild(exportBtn);
+
+        const gptBtn = document.createElement('button');
+        gptBtn.className = 'submit-button export-button';
+        gptBtn.style.backgroundColor = '#fbbc05';
+        gptBtn.textContent = 'KI-Analyse anzeigen';
+        gptBtn.onclick = () => runGPTAnalysis(data);
+        div.appendChild(gptBtn);
+
+        container.appendChild(div);
+      });
+    }
+
+    function exportDecision(data) {
+      const text = JSON.stringify(data, null, 2);
+      const blob = new Blob([text], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'entscheidung.json';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function runGPTAnalysis(data) {
+      const analyse =
+        `🧠 GPT-Analyse (simuliert):\n` +
+        `- Deine Frage: ${data.frage || 'Nicht angegeben'}\n` +
+        `- Deine Optionen: ${data.optionen || 'Nicht angegeben'}\n` +
+        `- Deine Entscheidung: ${data.entscheidung || 'Nicht angegeben'}\n\n` +
+        `➡️ Empfehlung: Deine Entscheidung wirkt reflektiert. Achte besonders auf die Konsequenzen und ob deine Werte wirklich gewahrt bleiben.`;
+      alert(analyse);
+    }
+  </script>
 </body>
 </html>
