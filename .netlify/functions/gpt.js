@@ -1,3 +1,4 @@
+
 const { Configuration, OpenAIApi } = require("openai");
 
 exports.handler = async function(event, context) {
@@ -22,7 +23,11 @@ exports.handler = async function(event, context) {
         },
         {
           role: "user",
-          content: `Hier ist eine Entscheidungssituation:\nFrage: ${frage}\nEntscheidung: ${entscheidung}\nWerte: ${werte}\nBitte gib eine kurze Bewertung und Empfehlung.`
+          content: `Hier ist eine Entscheidungssituation:
+Frage: ${frage}
+Entscheidung: ${entscheidung}
+Werte: ${werte}
+Bitte gib eine kurze Bewertung und Empfehlung.`
         }
       ]
     });
